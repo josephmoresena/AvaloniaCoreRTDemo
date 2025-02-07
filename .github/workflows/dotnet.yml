@@ -122,6 +122,8 @@ jobs:
           ./src/bin/Release/net9.0/linux-arm64/publish/*.png
   build-on-linux-arm:
     runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
     - name: APT deb822 sources
       run: |
         if [[ $ImageOS == "ubuntu24" ]]; then
@@ -157,8 +159,6 @@ jobs:
         Architectures: armhf
         EOF'
           fi
-    steps:
-    - uses: actions/checkout@v4
     - name: Setup NativeAOT pre-requisites
       run: |
         sudo dpkg --add-architecture armhf

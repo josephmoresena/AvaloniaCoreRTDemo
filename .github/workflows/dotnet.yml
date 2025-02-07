@@ -14,7 +14,7 @@ jobs:
     - name: APT deb822 sources
       run: |
         if [[ $ImageOS == "ubuntu24" ]]; then
-            cat <<EOF > deb822sources
+            sudo bash -c 'cat > /etc/apt/sources.list.d/ubuntu.sources <<EOF
         Types: deb
         URIs: http://archive.ubuntu.com/ubuntu/
         Suites: noble
@@ -32,11 +32,7 @@ jobs:
         Suites: noble-updates
         Components: main restricted universe
         Architectures: amd64
-        EOF
-
-            sudo mv deb822sources /etc/apt/sources.list.d/ubuntu.sources
-          else
-            sudo mv config/crosscomp-sources.list /etc/apt/sources.list
+        EOF'
           fi
     - name: Setup NativeAOT pre-requisites
       run: |
@@ -125,27 +121,56 @@ jobs:
           ./src/bin/Release/net9.0/linux-arm64/publish/*.so
           ./src/bin/Release/net9.0/linux-arm64/publish/*.png
   build-on-linux-arm:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
+    - name: APT deb822 sources
+      run: |
+        if [[ $ImageOS == "ubuntu24" ]]; then
+            sudo bash -c 'cat > /etc/apt/sources.list.d/ubuntu.sources <<EOF
+        Types: deb
+        URIs: http://archive.ubuntu.com/ubuntu/
+        Suites: noble
+        Components: main restricted universe
+        Architectures: amd64
+
+        Types: deb
+        URIs: http://security.ubuntu.com/ubuntu/
+        Suites: noble-security
+        Components: main restricted universe
+        Architectures: amd64
+
+        Types: deb
+        URIs: http://archive.ubuntu.com/ubuntu/
+        Suites: noble-updates
+        Components: main restricted universe
+        Architectures: amd64
+
+        Types: deb
+        URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+        Suites: noble
+        Components: main restricted multiverse universe
+        Architectures: armhf
+
+        Types: deb
+        URIs: http://azure.ports.ubuntu.com/ubuntu-ports/
+        Suites: noble-updates
+        Components: main restricted multiverse universe
+        Architectures: armhf
+        EOF'
+          fi
     steps:
     - uses: actions/checkout@v4
     - name: Setup NativeAOT pre-requisites
       run: |
-        sudo dpkg --add-architecture arm64
         sudo dpkg --add-architecture armhf
-        sudo bash -c 'cat > /etc/apt/sources.list.d/arm64.list <<EOF
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
-        deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
-        EOF'
         sudo bash -c 'cat > /etc/apt/sources.list.d/armhf.list <<EOF
-        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy main restricted
-        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-updates main restricted
-        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ jammy-backports main restricted universe multiverse
+        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ noble main restricted
+        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ noble-updates main restricted
+        deb [arch=armhf] http://ports.ubuntu.com/ubuntu-ports/ noble-backports main restricted universe multiverse
         EOF'
         sudo sed -i -e 's/deb http/deb [arch=amd64] http/g' /etc/apt/sources.list
         sudo sed -i -e 's/deb mirror/deb [arch=amd64] mirror/g' /etc/apt/sources.list
         sudo apt update
-        sudo apt-get --install-recommends --install-suggests install clang llvm binutils-aarch64-linux-gnu gcc-aarch64-linux-gnu zlib1g-dev:arm64 binutils-arm-linux-gnueabihf gcc-arm-linux-gnueabihf zlib1g-dev:armhf --assume-yes
+        sudo apt-get --install-recommends --install-suggests install clang binutils-arm-linux-gnueabihf gcc-arm-linux-gnueabihf zlib1g-dev:armhf --assume-yes
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
